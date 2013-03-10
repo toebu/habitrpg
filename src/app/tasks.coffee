@@ -2,6 +2,7 @@ scoring = require './scoring'
 helpers = require './helpers'
 _ = require 'underscore'
 moment = require 'moment'
+derby = require 'derby'
 
 module.exports.view = (view) ->
   view.fn 'taskClasses', (type, completed, value, repeat) ->
@@ -46,7 +47,7 @@ module.exports.app = (appExports, model) ->
 
   appExports.addTask = (e, el, next) ->
     type = $(el).attr('data-task-type')
-    list = model.at "_#{type}List"
+    list = model.at "_user.#{type}List"
     newModel = model.at('_new' + type.charAt(0).toUpperCase() + type.slice(1))
     text = newModel.get()
     # Don't add a blank task; 20/02/13 Added a check for undefined value, more at issue #463 -lancemanfv
@@ -55,23 +56,21 @@ module.exports.app = (appExports, model) ->
       return
 
     newModel.set ''
+    id = derby.uuid()
     switch type
 
       when 'habit'
-        list.unshift {type: type, text: text, notes: '', value: 0, up: true, down: true}
+        list.unshift {id: id, type: type, text: text, notes: '', value: 0, up: true, down: true}
 
       when 'reward'
-        list.unshift {type: type, text: text, notes: '', value: 20 }
+        list.unshift {id: id, type: type, text: text, notes: '', value: 20 }
 
       when 'daily'
-        list.unshift {type: type, text: text, notes: '', value: 0, repeat:{su:true,m:true,t:true,w:true,th:true,f:true,s:true}, completed: false }
+        list.unshift {id: id, type: type, text: text, notes: '', value: 0, repeat:{su:true,m:true,t:true,w:true,th:true,f:true,s:true}, completed: false }
 
       when 'todo'
-        list.unshift {type: type, text: text, notes: '', value: 0, completed: false }
+        list.unshift {id: id, type: type, text: text, notes: '', value: 0, completed: false }
 
-  # list.on 'set', '*.completed', (i, completed, previous, isLocal) ->
-  # # Move the item to the bottom if it was checked off
-  # list.move i, -1  if completed && isLocal
 
   appExports.del = (e, el) ->
     # Derby extends model.at to support creation from DOM nodes
@@ -94,24 +93,19 @@ module.exports.app = (appExports, model) ->
         result = confirm("Are you sure you want to delete this task?")
         return if result != true
 
-    #TODO bug where I have to delete from _users.tasks AND _{type}List,
-    # fix when query subscriptions implemented properly
     $('[rel=tooltip]').tooltip('hide')
-
-    user.del('tasks.'+id)
     task.remove()
 
 
   appExports.clearCompleted = (e, el) ->
-    todoIds = user.get('todoIds')
+    todos = model.get('_user.todoList')
     removed = false
-    _.each model.get('_todoList'), (task) ->
+    _.each model.get('_user.todoList'), (task) ->
       if task.completed
         removed = true
-        user.del('tasks.'+task.id)
-        todoIds.splice(todoIds.indexOf(task.id), 1)
+        todos.splice(todos.indexOf(task), 1)
     if removed
-      user.set('todoIds', todoIds)
+      user.set('_user.todoList', todos)
 
   appExports.toggleDay = (e, el) ->
     task = model.at(e.target)

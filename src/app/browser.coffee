@@ -14,10 +14,6 @@ restoreRefs = module.exports.restoreRefs = (model) ->
     else
       Math.round(((Math.pow(lvl,2)*0.25)+(10 * lvl) + 139.75)/10)*10
 
-  #refLists
-  _.each ['habit', 'daily', 'todo', 'reward'], (type) ->
-    model.refList "_#{type}List", "_user.tasks", "_user.#{type}Ids"
-
 ###
   Loads JavaScript files from (1) public/js/* and (2) external sources
   We use this file (instead of <Scripts:> or <Tail:> inside .html) so we can utilize require() to concatinate for
@@ -83,7 +79,7 @@ setupSortable = (model) ->
           # binding, since jQuery UI will move the element in the DOM.
           # Also, note that refList index arguments can either be an index
           # or the item's id property
-          model.at("_#{type}List").pass(ignore: domId).move {id}, to
+          model.at("_user.#{type}List").pass(ignore: domId).move {id}, to
 
 setupTooltips = (model) ->
   $('[rel=tooltip]').tooltip()

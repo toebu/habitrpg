@@ -50,8 +50,7 @@ module.exports.app = (appExports, model) ->
     batch = new character.BatchUpdate(model)
     batch.startTransaction()
     taskTypes = ['habit', 'daily', 'todo', 'reward']
-    batch.set 'tasks', {}
-    _.each taskTypes, (type) -> batch.set "#{type}Ids", []
+    _.each taskTypes, (type) -> batch.set "#{type}Lists", []
     batch.set 'balance', 1 if user.get('balance') < 1 #only if they haven't manually bought tokens
     revive(batch)
     batch.commit()
@@ -106,14 +105,13 @@ userSchema =
   party: { current: null, invitation: null }
   items: { weapon: 0, armor: 0, head: 0, shield: 0 }
   preferences: { gender: 'm', skin: 'white', hair: 'blond', armorSet: 'v1', dayStart:0 }
-  habitIds: []
-  dailyIds: []
-  todoIds: []
-  rewardIds: []
+  habitList: []
+  dailyList: []
+  todoList: []
+  rewardList: []
   apiToken: null # set in newUserObject below
   lastCron: 'new' #this will be replaced with `+new Date` on first run
   balance: 1
-  tasks: {}
   flags:
     partyEnabled: false
     itemsEnabled: false
@@ -141,13 +139,12 @@ module.exports.newUserObject = ->
   ]
 
   for task in defaultTasks
-    guid = task.id = derby.uuid()
-    newUser.tasks[guid] = task
+    task.id = derby.uuid()
     switch task.type
-      when 'habit' then newUser.habitIds.push guid
-      when 'daily' then newUser.dailyIds.push guid
-      when 'todo' then newUser.todoIds.push guid
-      when 'reward' then newUser.rewardIds.push guid
+      when 'habit' then newUser.habitList.push task
+      when 'daily' then newUser.dailyList.push task
+      when 'todo' then newUser.todoList.push task
+      when 'reward' then newUser.rewardList.push task
   return newUser
 
 module.exports.updateUser = (model) ->
@@ -163,23 +160,7 @@ module.exports.updateUser = (model) ->
       delete tasks[key]
 
   batch.startTransaction()
-
   batch.set('apiToken', derby.uuid()) unless obj.apiToken
-
-  ## Task List Cleanup
-  # FIXME temporary hack to fix lists (Need to figure out why these are happening)
-  _.each ['habit','daily','todo','reward'], (type) ->
-    # 1. remove duplicates
-    # 2. restore missing zombie tasks back into list
-    taskIds =  _.pluck( _.where(tasks, {type:type}), 'id')
-    union = _.union obj[type + 'Ids'], taskIds
-
-    # 2. remove empty (grey) tasks
-    preened = _.filter union, (val) -> _.contains(taskIds, val) and val?
-
-    # There were indeed issues found, set the new list
-    batch.set("#{type}Ids", preened) # if _.difference(preened, userObj[path]).length != 0
-
   batch.commit()
 
 module.exports.BatchUpdate = BatchUpdate = (model) ->

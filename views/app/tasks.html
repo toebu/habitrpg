@@ -3,13 +3,13 @@
     <div class="span3 well habits">
         <h2>Habits</h2>
         <app:newTask type="habit" inputValue="{_newHabit}" placeHolder="New Habit" />
-        <ul class="habits">{#each _habitList as :task}<app:task />{/}</ul>
+        <ul class="habits">{#each _user.habitList as :task}<app:task />{/}</ul>
     </div>
 
     <div class="span3 well dailys">
         <h2>Daily</h2>
         <app:newTask type="daily" inputValue="{_newDaily}" placeHolder="New Daily" />
-        <ul class='dailys'>{#each _dailyList as :task}<app:task />{/}</ul>
+        <ul class='dailys'>{#each _user.dailyList as :task}<app:task />{/}</ul>
     </div>
 
     <div class="span3 well todos context-enabled context-uncompleted tabbable tabs-below" id="todo-well">
@@ -18,7 +18,7 @@
             <app:newTask type="todo" inputValue="{_newTodo}" placeHolder="New Todo" />
         </div>
         <ul class='todos task-list'>
-            {#each _todoList as :task}<app:task />{/}
+            {#each _user.todoList as :task}<app:task />{/}
         </ul>
         <div class="display-context-dependant show-for-completed">
             <a class='btn' x-bind=click:clearCompleted>Clear Completed</a>

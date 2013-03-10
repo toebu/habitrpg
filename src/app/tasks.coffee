@@ -5,8 +5,14 @@ moment = require 'moment'
 derby = require 'derby'
 
 module.exports.view = (view) ->
-  view.fn 'taskClasses', (type, completed, value, repeat) ->
+  view.fn 'taskClasses', (type, completed, value, repeat, tags = {}, filters = {}) ->
     #TODO figure out how to just pass in the task model, so i can access all these properties from one object
+    if type != 'reward'
+      for filter, enabled of filters
+        if enabled and not tags[filter]
+          # All the other classes don't matter
+          return 'filtered-out'
+
     classes = type
 
     # show as completed if completed (naturally) or not required for today
@@ -165,6 +171,15 @@ module.exports.app = (appExports, model) ->
     target = $(targetSelector)
     target.removeClass(oldContext)
     target.addClass(newContext)
+
+  appExports.addTag = (e, el) ->
+    tagId = $(el).attr('data-tag-id')
+    taskId = $(el).attr('data-task-id')
+    taskType = $(el).attr('data-task-type')
+    tasks = model.get "_user.#{taskType}List"
+    index = _.indexOf tasks, _.findWhere(tasks, {id: taskId})
+    path = "_user.#{taskType}List.#{index}.tags.#{tagId}"
+    model.set path, !(model.get path)
 
   appExports.score = (e, el, next) ->
     direction = $(el).attr('data-direction')
